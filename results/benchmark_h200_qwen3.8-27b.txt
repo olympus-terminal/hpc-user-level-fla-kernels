@@ -1,0 +1,73 @@
+GPU: NVIDIA H200 (1x). Container: vllm/vllm-openai (vLLM 0.31.0). Model: Qwen/Qwen3.8-27B, bf16. Date: 2026-10-19.
+# verify_kernels.py, FLA off (reference)
+1024 {'warmup_s': 20.572, 'median_s': 0.708}
+4096 {'warmup_s': 2.091, 'median_s': 1.895}
+16384 {'warmup_s': 6.807, 'median_s': 6.607}
+{
+ "fla_importable": false,
+ "fla_version": null,
+ "causal_conv1d_importable": false,
+ "transformers": "5.17.0",
+ "torch": "2.13.0+cu130",
+ "gpu": "NVIDIA H200",
+ "python": "3.12.3",
+ "model_type": "qwen3_5",
+ "load_s": 67.9,
+ "timing_s_per_forward": {
+  "1024": {
+   "warmup_s": 20.572,
+   "median_s": 0.708
+  },
+  "4096": {
+   "warmup_s": 2.091,
+   "median_s": 1.895
+  },
+  "16384": {
+   "warmup_s": 6.807,
+   "median_s": 6.607
+  }
+ },
+ "fallback_warnings": [
+  "`causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.",
+  "`chunk_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel."
+ ]
+}
+
+# verify_kernels.py, FLA on
+1024 {'warmup_s': 35.541, 'median_s': 0.332}
+4096 {'warmup_s': 25.101, 'median_s': 0.472}
+16384 {'warmup_s': 24.77, 'median_s': 1.931}
+{
+ "fla_importable": true,
+ "fla_version": "0.5.2",
+ "causal_conv1d_importable": false,
+ "transformers": "5.17.0",
+ "torch": "2.13.0+cu130",
+ "gpu": "NVIDIA H200",
+ "python": "3.12.3",
+ "model_type": "qwen3_5",
+ "load_s": 82.2,
+ "timing_s_per_forward": {
+  "1024": {
+   "warmup_s": 35.541,
+   "median_s": 0.332
+  },
+  "4096": {
+   "warmup_s": 25.101,
+   "median_s": 0.472
+  },
+  "16384": {
+   "warmup_s": 24.77,
+   "median_s": 1.931
+  }
+ },
+ "fallback_warnings": [
+  "`causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel."
+ ]
+}
+
+# compare_logits.py run_reference.npz run_fla.npz
+A: run_reference.npz reference | B: run_fla.npz fla
+  len1024: max|d| 0.0723  mean|d| 0.0106  top1 same  top10 overlap 10/10  KL 2.21e-04  time A 0.708s B 0.332s  speed-up A/B 2.1x
+  len4096: max|d| 0.0625  mean|d| 0.0073  top1 same  top10 overlap 10/10  KL 6.51e-05  time A 1.895s B 0.472s  speed-up A/B 4.0x
+ len16384: max|d| 0.3438  mean|d| 0.0464  top1 same  top10 overlap 10/10  KL 2.86e-07  time A 6.607s B 1.931s  speed-up A/B 3.4x
